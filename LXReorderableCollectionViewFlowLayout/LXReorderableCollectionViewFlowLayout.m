@@ -82,8 +82,12 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
 }
 
 - (void)setupCollectionView {
+   _pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
+   _pinchGestureRecognizer.delegate = self;
+   
     _longPressGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self
                                                                                 action:@selector(handleLongPressGesture:)];
+   _longPressGestureRecognizer.minimumPressDuration = 0.2f;
     _longPressGestureRecognizer.delegate = self;
     
     // Links the default long press gesture recognizer to the custom long press gesture recognizer we are creating now
@@ -98,6 +102,9 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     
     _panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
                                                                     action:@selector(handlePanGesture:)];
+   _panGestureRecognizer.maximumNumberOfTouches = 1;
+   _panGestureRecognizer.minimumNumberOfTouches = 1;
+   
     _panGestureRecognizer.delegate = self;
     [self.collectionView addGestureRecognizer:_panGestureRecognizer];
 
@@ -268,6 +275,25 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     self.collectionView.contentOffset = LXS_CGPointAdd(contentOffset, translation);
 }
 
+-(void)handlePinchGesture:(UIPinchGestureRecognizer *)gestureRecognizer {
+   switch(gestureRecognizer.state)
+   {
+      case UIGestureRecognizerStateBegan:
+      {
+         break;
+      }
+      case UIGestureRecognizerStateCancelled:
+      case UIGestureRecognizerStateEnded:
+      {
+         break;
+      }
+      default:
+      {
+         break;
+      }
+   };
+}
+
 
 - (void)handleLongPressGesture:(UILongPressGestureRecognizer *)gestureRecognizer {
     switch(gestureRecognizer.state) {
@@ -289,23 +315,28 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             
             self.currentView = [[UIView alloc] initWithFrame:collectionViewCell.frame];
             
-            collectionViewCell.highlighted = YES;
-            UIImageView *highlightedImageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
-            highlightedImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            highlightedImageView.alpha = 1.0f;
-            
-            collectionViewCell.highlighted = NO;
+            //collectionViewCell.highlighted = YES;
+//            UIImageView *highlightedImageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
+//            highlightedImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+//            highlightedImageView.alpha = 1.0f;
+           
+            //collectionViewCell.highlighted = NO;
             UIImageView *imageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
             imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             imageView.alpha = 0.0f;
             
             [self.currentView addSubview:imageView];
-            [self.currentView addSubview:highlightedImageView];
+//            [self.currentView addSubview:highlightedImageView];
             [self.collectionView addSubview:self.currentView];
             
             self.currentViewCenter = self.currentView.center;
             
             __weak typeof(self) weakSelf = self;
+           
+           // No reason to have this transition visible.
+           //highlightedImageView.alpha = 0.0f;
+           imageView.alpha = 1.0f;
+           
             [UIView
              animateWithDuration:0.3
              delay:0.0
@@ -314,14 +345,13 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
                  __strong typeof(self) strongSelf = weakSelf;
                  if (strongSelf) {
                      strongSelf.currentView.transform = CGAffineTransformMakeScale(1.1f, 1.1f);
-                     highlightedImageView.alpha = 0.0f;
-                     imageView.alpha = 1.0f;
+
                  }
              }
              completion:^(BOOL finished) {
                  __strong typeof(self) strongSelf = weakSelf;
                  if (strongSelf) {
-                     [highlightedImageView removeFromSuperview];
+                     //[highlightedImageView removeFromSuperview];
                      
                      if ([strongSelf.delegate respondsToSelector:@selector(collectionView:layout:didBeginDraggingItemAtIndexPath:)]) {
                          [strongSelf.delegate collectionView:strongSelf.collectionView layout:strongSelf didBeginDraggingItemAtIndexPath:strongSelf.selectedItemIndexPath];

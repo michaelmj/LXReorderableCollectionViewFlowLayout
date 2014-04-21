@@ -21,7 +21,7 @@
 - (void)setHighlighted:(BOOL)highlighted
 {
     [super setHighlighted:highlighted];
-    self.playingCardImageView.alpha = highlighted ? 0.75f : 1.0f;
+    //self.playingCardImageView.alpha = highlighted ? 0.75f : 1.0f;
 }
 
 @end
