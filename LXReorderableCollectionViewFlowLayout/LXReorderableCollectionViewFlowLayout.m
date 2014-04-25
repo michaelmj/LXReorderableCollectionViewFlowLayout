@@ -84,6 +84,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
 - (void)setupCollectionView {
    _pinchGestureRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
    _pinchGestureRecognizer.delegate = self;
+   [self.collectionView addGestureRecognizer:_pinchGestureRecognizer];
    
     _longPressGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self
                                                                                 action:@selector(handleLongPressGesture:)];
@@ -280,11 +281,44 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
    {
       case UIGestureRecognizerStateBegan:
       {
+         NSIndexPath *currentIndexPath = [self.collectionView indexPathForItemAtPoint:[gestureRecognizer locationInView:self.collectionView]];
+         
+         if ([self.dataSource respondsToSelector:@selector(collectionView:canMoveItemAtIndexPath:)] &&
+             ![self.dataSource collectionView:self.collectionView canMoveItemAtIndexPath:currentIndexPath]) {
+            return;
+         }
+         
+         self.selectedItemIndexPath = currentIndexPath;
+         UICollectionViewCell *collectionViewCell = [self.collectionView cellForItemAtIndexPath:self.selectedItemIndexPath];
+         
+         self.currentView = [[UIView alloc] initWithFrame:collectionViewCell.frame];
+         
+         UIImageView *imageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
+         imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+         imageView.alpha = 1.0f;
+         imageView.multipleTouchEnabled = YES;
+         imageView.userInteractionEnabled = YES;
+         
+         
+         [self.currentView addSubview:imageView];
+         [self.collectionView addSubview:self.currentView];
+         
+         break;
+      }
+      case UIGestureRecognizerStateChanged:
+      {
+         if ( gestureRecognizer.scale > 1.f )
+         {
+            self.currentView.transform = CGAffineTransformMakeScale( gestureRecognizer.scale, gestureRecognizer.scale );
+         }
          break;
       }
       case UIGestureRecognizerStateCancelled:
       case UIGestureRecognizerStateEnded:
       {
+         //NSIndexPath *currentIndexPath = self.selectedItemIndexPath;
+         self.selectedItemIndexPath = nil;
+         [self.currentView removeFromSuperview];
          break;
       }
       default:
@@ -323,7 +357,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             //collectionViewCell.highlighted = NO;
             UIImageView *imageView = [[UIImageView alloc] initWithImage:[collectionViewCell LX_rasterizedImage]];
             imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            imageView.alpha = 0.0f;
+            imageView.alpha = 1.0f;
             
             [self.currentView addSubview:imageView];
 //            [self.currentView addSubview:highlightedImageView];
@@ -335,7 +369,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
            
            // No reason to have this transition visible.
            //highlightedImageView.alpha = 0.0f;
-           imageView.alpha = 1.0f;
+//           imageView.alpha = 1.0f;
            
             [UIView
              animateWithDuration:0.3
@@ -501,7 +535,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     if ([self.panGestureRecognizer isEqual:gestureRecognizer]) {
         return [self.longPressGestureRecognizer isEqual:otherGestureRecognizer];
     }
-    
+   
     return NO;
 }
 
